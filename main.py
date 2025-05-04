@@ -1,21 +1,100 @@
-
 import csv
-import pandas as pd
+import os
 from datetime import datetime
-from colorama import Fore, Style
+import pandas as pd
 
-expenses = pd.DataFrame()
+# Colored text (for visual flair)
+try:
+    from colorama import init, Fore, Style
+    init()
+except ImportError:
+    Fore = Style = lambda x: ""
+
+CSV_FILE = 'expenses.csv'
 monthly_budget = None
 yearly_budget = None
 
 def init_csv():
-    global expenses
-    try:
-        expenses = pd.read_csv('expenses.csv')
-        expenses['date'] = pd.to_datetime(expenses['date'])
-        expenses['amount'] = pd.to_numeric(expenses['amount'])
-    except FileNotFoundError:
-        expenses = pd.DataFrame(columns=['date', 'description', 'amount'])
+    if not os.path.exists(CSV_FILE):
+        with open(CSV_FILE, 'w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=["date", "description", "amount"])
+            writer.writeheader()
+
+def read_expenses():
+    with open(CSV_FILE, 'r') as file:
+        return list(csv.DictReader(file))
+
+def write_expenses(expenses):
+    with open(CSV_FILE, 'w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=["date", "description", "amount"])
+        writer.writeheader()
+        writer.writerows(expenses)
+
+def add_expense():
+    date = input("Enter date (YYYY-MM-DD) or press Enter for today: ").strip()
+    if not date:
+        date = datetime.today().strftime('%Y-%m-%d')
+    description = input("Enter description: ").strip()
+    amount = input("Enter amount: ").strip()
+
+    expenses = read_expenses()
+    expenses.append({"date": date, "description": description, "amount": amount})
+    write_expenses(expenses)
+    print(Fore.GREEN + "✅ Expense added successfully!\n" + Style.RESET_ALL)
+
+def view_expenses():
+    expenses = read_expenses()
+    if not expenses:
+        print("No expenses recorded.")
+        return
+
+    print(f"\n{Fore.CYAN}{'Index':<6}{'Date':<12}{'Description':<30}{'Amount':>10}{Style.RESET_ALL}")
+    print("-" * 60)
+    for i, exp in enumerate(expenses):
+        print(f"{i:<6}{exp['date']:<12}{exp['description']:<30}{exp['amount']:>10}")
+    print()
+
+def delete_expense():
+    view_expenses()
+    index = int(input("Enter the index of the expense to delete: "))
+    expenses = read_expenses()
+    if 0 <= index < len(expenses):
+        del expenses[index]
+        write_expenses(expenses)
+        print(Fore.RED + "❌ Expense deleted." + Style.RESET_ALL)
+    else:
+        print("Invalid index.")
+
+def export_csv():
+    expenses = read_expenses()
+    filename = input("Enter export filename (e.g., 'my_expenses.csv'): ").strip()
+    if not filename.endswith('.csv'):
+        filename += '.csv'
+    with open(filename, 'w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=["date", "description", "amount"])
+        writer.writeheader()
+        writer.writerows(expenses)
+    print(Fore.GREEN + f"✅ Exported to {filename}\n" + Style.RESET_ALL)
+
+def monthly_summary():
+    expenses = pd.read_csv(CSV_FILE)
+    expenses['date'] = pd.to_datetime(expenses['date'])
+    expenses['amount'] = pd.to_numeric(expenses['amount'])
+
+    month = datetime.today().strftime('%Y-%m')
+    current_month_expenses = expenses[expenses['date'].dt.strftime('%Y-%m') == month]
+    total = current_month_expenses['amount'].sum()
+
+    print(f"\n📆 {Fore.MAGENTA}Monthly Summary - {month}{Style.RESET_ALL}")
+    print(f"Total spent: {Fore.YELLOW}${total:.2f}{Style.RESET_ALL}")
+    if monthly_budget:
+        print(f"Budget: ${monthly_budget:.2f}")
+        print(f"{'Remaining:' if total <= monthly_budget else 'Over budget by:'} {Fore.GREEN if total <= monthly_budget else Fore.RED}${abs(monthly_budget - total):.2f}{Style.RESET_ALL}")
+
+def yearly_summary():
+    expenses = pd.read_csv(CSV_FILE)
+    expenses['date'] = pd.to_datetime(expenses['date'])
+    expenses['amount'] = pd.to_numeric(expenses['amount'])
 
     year = datetime.today().year
     this_year = expenses[expenses['date'].dt.year == year]

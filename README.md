@@ -22,3 +22,12 @@ You can install the required dependencies using the following command:
 
 ```bash
 pip install -r requirements.txt
+
+## 🔗 Run This Project in GitHub Codespaces
+
+You can open and run this CLI expense tracker directly in GitHub Codespaces:
+
+👉 [Open in Codespaces](https://github.com/codespaces)
+
+> Make sure you're logged into GitHub and have Codespaces enabled.
+

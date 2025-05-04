@@ -1,5 +1,21 @@
+
 import csv
-    expenses['amount'] = pd.to_numeric(expenses['amount'])
+import pandas as pd
+from datetime import datetime
+from colorama import Fore, Style
+
+expenses = pd.DataFrame()
+monthly_budget = None
+yearly_budget = None
+
+def init_csv():
+    global expenses
+    try:
+        expenses = pd.read_csv('expenses.csv')
+        expenses['date'] = pd.to_datetime(expenses['date'])
+        expenses['amount'] = pd.to_numeric(expenses['amount'])
+    except FileNotFoundError:
+        expenses = pd.DataFrame(columns=['date', 'description', 'amount'])
 
     year = datetime.today().year
     this_year = expenses[expenses['date'].dt.year == year]
